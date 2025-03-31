@@ -1,7 +1,26 @@
-{
-	"folders": [
-		{
-			"path": "."
-		}
-	]
+$Users = @(
+    @{FirstName="Jean"; LastName="Dupont"; Username="jdupont"; Password="P@ssw0rd!"; Group="Utilisateurs"},
+    @{FirstName="Marie"; LastName="Curie"; Username="mcurie"; Password="P@ssw0rd!"; Group="Scientifiques"},
+    @{FirstName="Albert"; LastName="Einstein"; Username="aeinstein"; Password="P@ssw0rd!"; Group="Physiciens"},
+    @{FirstName="Isaac"; LastName="Newton"; Username="inewton"; Password="P@ssw0rd!"; Group="Mathematiciens"},
+    @{FirstName="Ada"; LastName="Lovelace"; Username="alovelace"; Password="P@ssw0rd!"; Group="Informaticiens"}
+)
+
+# Spécifiez l'OU où créer les utilisateurs
+$OU = "OU=Utilisateurs,DC=mondomaine,DC=local"
+
+# Création des utilisateurs
+foreach ($User in $Users) {
+    $SAM = $User.Username
+    $FullName = "$($User.FirstName) $($User.LastName)"
+    $Password = ConvertTo-SecureString $User.Password -AsPlainText -Force
+    
+    # Création de l'utilisateur
+    New-ADUser -SamAccountName $SAM -UserPrincipalName "$SAM@mondomaine.local" -Name $FullName `
+        -GivenName $User.FirstName -Surname $User.LastName -DisplayName $FullName -Path $OU `
+        -AccountPassword $Password -Enabled $true -ChangePasswordAtLogon $true
+    
+    # Ajout au groupe
+    Add-ADGroupMember -Identity $User.Group -Members $SAM
+    Write-Host "Utilisateur $FullName créé et ajouté au groupe $($User.Group)."
 }
